@@ -15,10 +15,12 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QGraphicsView, QGridLayout, QGroupBox,
-    QHBoxLayout, QLabel, QLineEdit, QMainWindow,
-    QMenuBar, QPushButton, QSizePolicy, QStatusBar,
-    QTextEdit, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QApplication, QGraphicsView, QGridLayout, QHBoxLayout,
+    QLabel, QMainWindow, QMenuBar, QSizePolicy,
+    QStatusBar, QVBoxLayout, QWidget)
+
+from qfluentwidgets import (CardWidget, LineEdit, PrimaryPushButton, TextEdit,
+    TitleLabel)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -33,7 +35,7 @@ class Ui_MainWindow(object):
         self.widget.setObjectName(u"widget")
         self.verticalLayout = QVBoxLayout(self.widget)
         self.verticalLayout.setObjectName(u"verticalLayout")
-        self.title = QLabel(self.widget)
+        self.title = TitleLabel(self.widget)
         self.title.setObjectName(u"title")
         self.title.setAlignment(Qt.AlignCenter)
 
@@ -43,7 +45,7 @@ class Ui_MainWindow(object):
         self.widget_2.setObjectName(u"widget_2")
         self.horizontalLayout_2 = QHBoxLayout(self.widget_2)
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
-        self.groupBox = QGroupBox(self.widget_2)
+        self.groupBox = CardWidget(self.widget_2)
         self.groupBox.setObjectName(u"groupBox")
         self.verticalLayout_2 = QVBoxLayout(self.groupBox)
         self.verticalLayout_2.setSpacing(4)
@@ -59,7 +61,7 @@ class Ui_MainWindow(object):
 
         self.gridLayout.addWidget(self.label_3, 2, 0, 1, 1)
 
-        self.A_point = QLineEdit(self.widget_3)
+        self.A_point = LineEdit(self.widget_3)
         self.A_point.setObjectName(u"A_point")
 
         self.gridLayout.addWidget(self.A_point, 0, 1, 1, 1)
@@ -69,7 +71,7 @@ class Ui_MainWindow(object):
 
         self.gridLayout.addWidget(self.label, 0, 0, 1, 1)
 
-        self.line_edit = QLineEdit(self.widget_3)
+        self.line_edit = LineEdit(self.widget_3)
         self.line_edit.setObjectName(u"line_edit")
 
         self.gridLayout.addWidget(self.line_edit, 3, 1, 1, 1)
@@ -84,12 +86,12 @@ class Ui_MainWindow(object):
 
         self.gridLayout.addWidget(self.label_2, 1, 0, 1, 1)
 
-        self.B_point = QLineEdit(self.widget_3)
+        self.B_point = LineEdit(self.widget_3)
         self.B_point.setObjectName(u"B_point")
 
         self.gridLayout.addWidget(self.B_point, 1, 1, 1, 1)
 
-        self.C_point = QLineEdit(self.widget_3)
+        self.C_point = LineEdit(self.widget_3)
         self.C_point.setObjectName(u"C_point")
 
         self.gridLayout.addWidget(self.C_point, 2, 1, 1, 1)
@@ -104,17 +106,17 @@ class Ui_MainWindow(object):
         self.horizontalLayout_3.setSpacing(1)
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
         self.horizontalLayout_3.setContentsMargins(1, 1, 1, 1)
-        self.pushButton = QPushButton(self.widget_5)
+        self.pushButton = PrimaryPushButton(self.widget_5)
         self.pushButton.setObjectName(u"pushButton")
 
         self.horizontalLayout_3.addWidget(self.pushButton)
 
-        self.pushButton_2 = QPushButton(self.widget_5)
+        self.pushButton_2 = PrimaryPushButton(self.widget_5)
         self.pushButton_2.setObjectName(u"pushButton_2")
 
         self.horizontalLayout_3.addWidget(self.pushButton_2)
 
-        self.pushButton_3 = QPushButton(self.widget_5)
+        self.pushButton_3 = PrimaryPushButton(self.widget_5)
         self.pushButton_3.setObjectName(u"pushButton_3")
 
         self.horizontalLayout_3.addWidget(self.pushButton_3)
@@ -126,7 +128,7 @@ class Ui_MainWindow(object):
         self.widget_4.setObjectName(u"widget_4")
         self.verticalLayout_3 = QVBoxLayout(self.widget_4)
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
-        self.textEdit = QTextEdit(self.widget_4)
+        self.textEdit = TextEdit(self.widget_4)
         self.textEdit.setObjectName(u"textEdit")
         self.textEdit.setReadOnly(True)
 
@@ -136,12 +138,12 @@ class Ui_MainWindow(object):
         self.widget_6.setObjectName(u"widget_6")
         self.horizontalLayout_4 = QHBoxLayout(self.widget_6)
         self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
-        self.pushButton_4 = QPushButton(self.widget_6)
+        self.pushButton_4 = PrimaryPushButton(self.widget_6)
         self.pushButton_4.setObjectName(u"pushButton_4")
 
         self.horizontalLayout_4.addWidget(self.pushButton_4)
 
-        self.pushButton_5 = QPushButton(self.widget_6)
+        self.pushButton_5 = PrimaryPushButton(self.widget_6)
         self.pushButton_5.setObjectName(u"pushButton_5")
 
         self.horizontalLayout_4.addWidget(self.pushButton_5)
@@ -183,7 +185,7 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
         self.title.setText(QCoreApplication.translate("MainWindow", u"\u4e8c\u7ef4\u56fe\u5f62\u5750\u6807\u53d8\u6362\u5206\u89e3", None))
-        self.groupBox.setTitle(QCoreApplication.translate("MainWindow", u"\u83dc\u5355", None))
+        #self.groupBox.setTitle(QCoreApplication.translate("MainWindow", u"\u83dc\u5355", None))
         self.label_3.setText(QCoreApplication.translate("MainWindow", u"C\u70b9\u5750\u6807", None))
         self.A_point.setInputMask("")
         self.A_point.setText("")

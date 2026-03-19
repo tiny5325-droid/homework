@@ -7,7 +7,8 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 from ui_window import Ui_MainWindow
-from qt_material import apply_stylesheet
+from qfluentwidgets import (setTheme, Theme, MSFluentWindow, MSFluentTitleBar, 
+                            MessageBox, InfoBar, InfoBarPosition, FluentIcon as FIF)
 import calculate as calc  # 导入后端模块
 
 plt.rcParams['font.family'] = 'SimHei'  # 设置为黑体，支持中文
@@ -101,37 +102,45 @@ def parse_line_expression(expr):
     return np.array(points[0]), np.array(points[1])
 
 # -------------------------- 主窗口类 --------------------------
-class MainWindow(QMainWindow):
+class MainWindow(MSFluentWindow):
     def __init__(self):
+        self.ui = None 
         super().__init__()
+        
+        # 修复 lambda 映射，使用 self.layout()
+        self.setCentralWidget = lambda w: self.layout().addWidget(w)
+        self.setMenuBar = lambda m: None
+        self.setStatusBar = lambda s: None
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-
-        # 增大画布
+        
+        # 隐藏原生栏
+        self.ui.menubar.hide()
+        self.ui.statusbar.hide()
+        
+        # 设置窗口基本属性
+        self.setWindowTitle("二维图形坐标变换工具")
+        
+        # --- 画布初始化 ---
         self.figure = Figure(figsize=(12, 9), dpi=100, constrained_layout=True)
         self.canvas = FigureCanvas(self.figure)
-        self.canvas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        scene = self.ui.graphicsView.scene()
-        if scene is None:
+        
+        # 检查并设置 Scene
+        if self.ui.graphicsView.scene() is None:
             from PySide6.QtWidgets import QGraphicsScene
-            scene = QGraphicsScene()
-            self.ui.graphicsView.setScene(scene)
-        self.proxy = scene.addWidget(self.canvas)
-
-        # 明确启用滚动条
-        self.ui.graphicsView.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.ui.graphicsView.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+            self.ui.graphicsView.setScene(QGraphicsScene())
+            
+        self.ui.graphicsView.scene().addWidget(self.canvas)
+        
+        # 安装事件过滤器
         self.ui.graphicsView.viewport().installEventFilter(self)
-        self.ui.graphicsView.setRenderHints(
-            QPainter.Antialiasing | QPainter.SmoothPixmapTransform
-        )
         
         # 连接信号
-        self.ui.pushButton.clicked.connect(self.generate_random)  # 生成随机值
-        self.ui.pushButton_2.clicked.connect(self.calculate)      # 确定
-        self.ui.pushButton_3.clicked.connect(self.clear_all)      # 取消
-        self.ui.pushButton_4.clicked.connect(self.export_result)  # 导出
-        self.ui.pushButton_5.clicked.connect(self.show_help)      # 帮助文档
+        self.ui.pushButton.clicked.connect(self.generate_random)
+        self.ui.pushButton_2.clicked.connect(self.calculate)
+        self.ui.pushButton_3.clicked.connect(self.clear_all)
+        self.ui.pushButton_4.clicked.connect(self.export_result)
+        self.ui.pushButton_5.clicked.connect(self.show_help)
         
     def generate_random(self):
         """生成随机值填充输入框"""
@@ -160,35 +169,38 @@ class MainWindow(QMainWindow):
         return triangle, p1, p2
 
     def eventFilter(self, obj, event):
-        """事件过滤器，处理 graphicsView 的滚轮缩放"""
-        if obj == self.ui.graphicsView.viewport() and event.type() == QEvent.Type.Wheel:
-            delta = event.angleDelta().y()
-            factor = 1.2 if delta > 0 else 1 / 1.2
-            self.ui.graphicsView.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
-            self.ui.graphicsView.scale(factor, factor)
-            return True
-        # 其他事件必须返回基类处理结果（或 False）
-        return super().eventFilter(obj, event)
+            """事件过滤器，处理 graphicsView 的滚轮缩放"""
+            # 增加安全检查：如果 ui 还没加载完，或者 graphicsView 还没创建，直接跳过
+            if self.ui is None or not hasattr(self.ui, 'graphicsView'):
+                return super().eventFilter(obj, event)
+
+            # 确保 obj 是视图的 viewport
+            if obj == self.ui.graphicsView.viewport() and event.type() == QEvent.Type.Wheel:
+                delta = event.angleDelta().y()
+                factor = 1.2 if delta > 0 else 1 / 1.2
+                self.ui.graphicsView.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
+                self.ui.graphicsView.scale(factor, factor)
+                return True
+                
+            return super().eventFilter(obj, event)
             
     def calculate(self):
-        try:
-            triangle, p1, p2 = self.parse_inputs()
-        except Exception as e:
-            QMessageBox.critical(self, "输入错误", f"解析输入失败：{str(e)}")
-            return
+            try:
+                triangle, p1, p2 = self.parse_inputs()
+            except Exception as e:
+                w = MessageBox("输入错误", f"解析输入失败：{str(e)}", self)
+                w.exec()
+                return
 
-        try:
-            # 使用带步骤的新函数
-            result_text, tri_target, tri_original, steps_triangles, basic_matrices, (line_p1, line_p2) = calc.compute_reflection_with_steps(triangle, p1, p2)
-        except Exception as e:
-            QMessageBox.critical(self, "计算错误", f"计算失败：{str(e)}")
-            return
+            try:
+                result_text, tri_target, tri_original, steps_triangles, basic_matrices, (line_p1, line_p2) = calc.compute_reflection_with_steps(triangle, p1, p2)
+            except Exception as e:
+                w = MessageBox("计算错误", f"计算失败：{str(e)}", self)
+                w.exec()
+                return
 
-        # 显示文本结果
-        self.ui.textEdit.setText(result_text)
-
-        # 绘制多步骤图形
-        self.plot_steps(tri_original, steps_triangles, line_p1, line_p2)
+            self.ui.textEdit.setText(result_text)
+            self.plot_steps(tri_original, steps_triangles, line_p1, line_p2)
 
     def plot_steps(self, orig, steps_triangles, line_p1, line_p2):
         """绘制初始三角形和5个变换步骤（2行3列）"""
@@ -277,19 +289,29 @@ class MainWindow(QMainWindow):
         self.canvas.draw()
 
     def export_result(self):
-        """导出文本结果到文件"""
-        text = self.ui.textEdit.toPlainText()
-        if not text.strip():
-            QMessageBox.warning(self, "导出失败", "没有可导出的内容")
-            return
-        file_path, _ = QFileDialog.getSaveFileName(self, "保存文件", "", "文本文件 (*.txt);;所有文件 (*)")
-        if file_path:
-            try:
-                with open(file_path, 'w', encoding='utf-8') as f:
-                    f.write(text)
-                QMessageBox.information(self, "导出成功", f"文件已保存至：{file_path}")
-            except Exception as e:
-                QMessageBox.critical(self, "导出失败", str(e))
+            text = self.ui.textEdit.toPlainText()
+            if not text.strip():
+                # 使用 InfoBar 显示警告
+                InfoBar.warning(title='导出失败', content="没有可导出的内容", parent=self)
+                return
+                
+            file_path, _ = QFileDialog.getSaveFileName(self, "保存文件", "", "文本文件 (*.txt);;所有文件 (*)")
+            if file_path:
+                try:
+                    with open(file_path, 'w', encoding='utf-8') as f:
+                        f.write(text)
+                    
+                    InfoBar.success(
+                        title='导出成功',
+                        content=f"文件已保存至：{file_path}",
+                        orient=Qt.Horizontal,
+                        isClosable=True,
+                        position=InfoBarPosition.TOP,
+                        duration=3000,
+                        parent=self
+                    )
+                except Exception as e:
+                    InfoBar.error(title='保存出错', content=str(e), parent=self)
 
     def show_help(self):
         """在文本显示区显示使用说明"""
@@ -315,7 +337,8 @@ class MainWindow(QMainWindow):
 # -------------------------- 程序入口 --------------------------
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    apply_stylesheet(app, theme='light_blue.xml')
+    setTheme(Theme.LIGHT) # 或者 Theme.DARK
+    
     window = MainWindow()
     window.show()
     sys.exit(app.exec())
