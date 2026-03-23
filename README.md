@@ -112,6 +112,170 @@ H = T₂ × R_inv × S × R × T₁
 
 程序使用齐次坐标进行所有变换计算，将2D点 (x, y) 扩展为3D齐次坐标 (x, y, 1)。
 
+## 详细计算流程说明
+
+### 1. 齐次坐标系统
+
+#### 1.1 坐标转换
+
+**二维点转齐次坐标：**
+
+对于平面上的点 $P = (x, y)$，扩展为齐次坐标：
+$$\begin{pmatrix} x \\ y \\ 1 \end{pmatrix}$$
+
+对于多个点，矩阵形式为：
+$$\mathbf{P}_{hom} = \begin{pmatrix} x_1 & x_2 & x_3 \\ y_1 & y_2 & y_3 \\ 1 & 1 & 1 \end{pmatrix}$$
+
+**齐次坐标转二维点：**
+
+给定齐次坐标 $\begin{pmatrix} x' \\ y' \\ w \end{pmatrix}$，转换为二维点：
+$$P = \left(\frac{x'}{w}, \frac{y'}{w}\right)$$
+
+### 2. 基本变换矩阵
+
+#### 2.1 平移矩阵 $T(t_x, t_y)$
+
+将点平移 $(t_x, t_y)$：
+$$T = \begin{pmatrix} 1 & 0 & t_x \\ 0 & 1 & t_y \\ 0 & 0 & 1 \end{pmatrix}$$
+
+**应用到点：**
+$$\begin{pmatrix} x' \\ y' \\ 1 \end{pmatrix} = \begin{pmatrix} 1 & 0 & t_x \\ 0 & 1 & t_y \\ 0 & 0 & 1 \end{pmatrix} \begin{pmatrix} x \\ y \\ 1 \end{pmatrix} = \begin{pmatrix} x + t_x \\ y + t_y \\ 1 \end{pmatrix}$$
+
+#### 2.2 旋转矩阵 $R(\theta)$
+
+绕原点逆时针旋转 $\theta$ 弧度：
+$$R(\theta) = \begin{pmatrix} \cos\theta & -\sin\theta & 0 \\ \sin\theta & \cos\theta & 0 \\ 0 & 0 & 1 \end{pmatrix}$$
+
+**应用到点 $(x, y)$：**
+$$\begin{pmatrix} x' \\ y' \\ 1 \end{pmatrix} = \begin{pmatrix} x\cos\theta - y\sin\theta \\ x\sin\theta + y\cos\theta \\ 1 \end{pmatrix}$$
+
+#### 2.3 反射矩阵 $S_x$（关于X轴）
+
+关于X轴的反射矩阵：
+$$S_x = \begin{pmatrix} 1 & 0 & 0 \\ 0 & -1 & 0 \\ 0 & 0 & 1 \end{pmatrix}$$
+
+**应用到点：**
+$$\begin{pmatrix} x' \\ y' \\ 1 \end{pmatrix} = \begin{pmatrix} x \\ -y \\ 1 \end{pmatrix}$$
+
+### 3. 关于任意直线的反射变换
+
+#### 3.1 问题设定
+
+已知：
+- 三角形顶点：$A(x_A, y_A)$, $B(x_B, y_B)$, $C(x_C, y_C)$
+- 对称轴直线：通过点 $P_1(x_1, y_1)$ 和点 $P_2(x_2, y_2)$
+
+#### 3.2 直线方向角计算
+
+直线与X轴的夹角：
+$$\theta = \arctan\left(\frac{y_2 - y_1}{x_2 - x_1}\right)$$
+
+#### 3.3 五步变换过程
+
+**步骤1：平移 $T_1$** - 将直线上的点平移到原点
+
+将点 $P_1(x_1, y_1)$ 平移到原点：
+$$T_1 = \begin{pmatrix} 1 & 0 & -x_1 \\ 0 & 1 & -y_1 \\ 0 & 0 & 1 \end{pmatrix}$$
+
+变换后，直线通过原点，新坐标记为 $A_1, B_1, C_1$
+
+**步骤2：旋转 $R$** - 旋转使直线与X轴重合
+
+顺时针旋转 $\theta$ 角（因为要使直线与X轴重合，使用 $-\theta$）：
+$$R = \begin{pmatrix} \cos\theta & \sin\theta & 0 \\ -\sin\theta & \cos\theta & 0 \\ 0 & 0 & 1 \end{pmatrix}$$
+
+变换后坐标记为 $A_2, B_2, C_2$，此时对称轴已与X轴重合
+
+**步骤3：关于X轴反射 $S$**
+
+$$S = \begin{pmatrix} 1 & 0 & 0 \\ 0 & -1 & 0 \\ 0 & 0 & 1 \end{pmatrix}$$
+
+变换后坐标记为 $A_3, B_3, C_3$，其中 $y_i' = -y_i$
+
+**步骤4：逆旋转 $R^{-1}$** - 旋转回原方向
+
+逆旋转 $\theta$ 角（使用 $+\theta$）：
+$$R^{-1} = \begin{pmatrix} \cos\theta & -\sin\theta & 0 \\ \sin\theta & \cos\theta & 0 \\ 0 & 0 & 1 \end{pmatrix}$$
+
+变换后坐标记为 $A_4, B_4, C_4$
+
+**步骤5：逆平移 $T_2$** - 平移回原位
+
+$$T_2 = \begin{pmatrix} 1 & 0 & x_1 \\ 0 & 1 & y_1 \\ 0 & 0 & 1 \end{pmatrix}$$
+
+最终坐标为 $A', B', C'$
+
+#### 3.4 复合变换矩阵
+
+最终变换矩阵为：
+$$H = T_2 \cdot R^{-1} \cdot S \cdot R \cdot T_1$$
+
+展开后的完整矩阵形式（假设 $\cos\theta = c$, $\sin\theta = s$）：
+
+$$H = \begin{pmatrix} 1 & 0 & x_1 \\ 0 & 1 & y_1 \\ 0 & 0 & 1 \end{pmatrix} \begin{pmatrix} c & -s & 0 \\ s & c & 0 \\ 0 & 0 & 1 \end{pmatrix} \begin{pmatrix} 1 & 0 & 0 \\ 0 & -1 & 0 \\ 0 & 0 & 1 \end{pmatrix} \begin{pmatrix} c & s & 0 \\ -s & c & 0 \\ 0 & 0 & 1 \end{pmatrix} \begin{pmatrix} 1 & 0 & -x_1 \\ 0 & 1 & -y_1 \\ 0 & 0 & 1 \end{pmatrix}$$
+
+简化后（设 $\Delta x = -x_1$, $\Delta y = -y_1$）：
+$$H = \begin{pmatrix} \cos(2\theta) & \sin(2\theta) & x_1(1-\cos(2\theta)) - y_1\sin(2\theta) \\ \sin(2\theta) & -\cos(2\theta) & y_1(1+\cos(2\theta)) - x_1\sin(2\theta) \\ 0 & 0 & 1 \end{pmatrix}$$
+
+### 4. 计算示例
+
+#### 4.1 案例数据
+
+设三角形顶点：
+- $A(-1.25, 4.5)$
+- $B(2.5, 1.0)$
+- $C(-3, -3)$
+
+对称轴通过点：$P_1(0, 0)$ 和 $P_2(1, 1)$
+
+#### 4.2 参数计算
+
+**直线方向角：**
+$$\theta = \arctan\left(\frac{1-0}{1-0}\right) = \arctan(1) = \frac{\pi}{4} = 45°$$
+
+$$\cos\theta = \frac{\sqrt{2}}{2} \approx 0.7071, \quad \sin\theta = \frac{\sqrt{2}}{2} \approx 0.7071$$
+
+#### 4.3 矩阵计算
+
+**步骤1 - 平移矩阵 $T_1$：**
+$$T_1 = \begin{pmatrix} 1 & 0 & 0 \\ 0 & 1 & 0 \\ 0 & 0 & 1 \end{pmatrix}$$
+
+**步骤2 - 旋转矩阵 $R$：**
+$$R = \begin{pmatrix} 0.7071 & 0.7071 & 0 \\ -0.7071 & 0.7071 & 0 \\ 0 & 0 & 1 \end{pmatrix}$$
+
+对应点 $A(-1.25, 4.5)$ 变换后：
+$$\begin{pmatrix} x' \\ y' \\ 1 \end{pmatrix} = \begin{pmatrix} -1.25 \times 0.7071 + 4.5 \times 0.7071 \\ 1.25 \times 0.7071 + 4.5 \times 0.7071 \\ 1 \end{pmatrix} = \begin{pmatrix} 2.271 \\ 4.038 \\ 1 \end{pmatrix}$$
+
+**步骤3 - 反射矩阵 $S$：**
+$$S = \begin{pmatrix} 1 & 0 & 0 \\ 0 & -1 & 0 \\ 0 & 0 & 1 \end{pmatrix}$$
+
+$$A_3 = \begin{pmatrix} 2.271 \\ -4.038 \\ 1 \end{pmatrix}$$
+
+**步骤4 - 逆旋转矩阵 $R^{-1}$：**
+$$R^{-1} = \begin{pmatrix} 0.7071 & -0.7071 & 0 \\ 0.7071 & 0.7071 & 0 \\ 0 & 0 & 1 \end{pmatrix}$$
+
+$$A_4 = \begin{pmatrix} 2.271 \times 0.7071 + 4.038 \times 0.7071 \\ 2.271 \times 0.7071 - 4.038 \times 0.7071 \\ 1 \end{pmatrix} = \begin{pmatrix} 4.5 \\ -1.25 \\ 1 \end{pmatrix}$$
+
+**步骤5 - 逆平移矩阵 $T_2$：**
+$$T_2 = \begin{pmatrix} 1 & 0 & 0 \\ 0 & 1 & 0 \\ 0 & 0 & 1 \end{pmatrix}$$
+
+$$A' = \begin{pmatrix} 4.5 \\ -1.25 \\ 1 \end{pmatrix}$$
+
+#### 4.4 最终结果
+
+原三角形顶点 $\rightarrow$ 反射后顶点：
+- $A(-1.25, 4.5) \rightarrow A'(4.5, -1.25)$
+- $B(2.5, 1.0) \rightarrow B'(1.0, -2.5)$
+- $C(-3, -3) \rightarrow C'(-3, 3)$
+
+### 5. 矩阵运算的数值注意事项
+
+- 所有计算使用**双精度浮点数**（float64）
+- 角度计算使用**弧度制**，输出时转换为**度数制**
+- 矩阵乘法按照 $H = T_2 \cdot R^{-1} \cdot S \cdot R \cdot T_1$ 的顺序（**从右到左**应用变换）
+- 浮点数比较的零判断阈值为 $1e^{-6}$
+- 输出矩阵元素保留**4位小数**
+
 ## 文件说明
 
 ### main.py
